@@ -200,20 +200,122 @@ function render(){
   bindEv()}
 
 // ══ EVENTS ══
+var _debounceTimer=null;
+var _isDragging=false;
+
+function renderSafe(){
+  // Save scroll position and focused element
+  var sy=window.scrollY||window.pageYOffset||0;
+  var fEl=document.activeElement;
+  var fId=fEl?fEl.id:'';
+  var fVal=fEl?fEl.value:'';
+  var fSel=[0,0];
+  try{if(fEl&&fEl.selectionStart!=null)fSel=[fEl.selectionStart,fEl.selectionEnd]}catch(e){}
+
+  render();
+
+  // Restore scroll
+  window.scrollTo(0,sy);
+
+  // Restore focus
+  if(fId){
+    var el=document.getElementById(fId);
+    if(el){
+      el.focus();
+      try{
+        if(el.type==='text'||el.type==='number'){
+          el.value=fVal;
+          el.setSelectionRange(fSel[0],fSel[1]);
+        }
+      }catch(e){}
+    }
+  }
+}
+
+// Lightweight update: only text displays + charts, no DOM rebuild
+function lightUpdate(){
+  var data=doSweep(S),opt=findOptimal(data);
+  var sAmt=S.sliderAmount!==null?S.sliderAmount:opt.amount;
+  var sel=S.sliderAmount!==null?compute({monthlyTL:S.monthlyTL,lessonEUR:S.lessonEUR,lessonCycleWeeks:S.lessonCycleWeeks,rate:S.rate,exchangeRate:S.exchangeRate,horizonMonths:S.horizonMonths,transferAmount:S.sliderAmount}):opt;
+
+  // Update text displays only (find by known positions)
+  var spans=document.querySelectorAll('.hero-stat-value');
+  // Amount slider display
+  var amtDisp=document.querySelector('[id="slider-amount"]');
+  if(amtDisp){
+    var parent=amtDisp.parentElement;
+    var valSpan=parent?parent.querySelector('span[style*="font-size:20px"]'):null;
+    if(valSpan)valSpan.textContent=sAmt+' €';
+  }
+  // Horizon display
+  var hzDisp=document.querySelector('[id="slider-horizon"]');
+  if(hzDisp){
+    var hp=hzDisp.parentElement;
+    var hvSpan=hp?hp.querySelector('span[style*="font-size:16px"]'):null;
+    if(hvSpan)hvSpan.textContent=S.horizonMonths+' ay';
+  }
+
+  // Redraw charts only
+  drawCostCurve(document.getElementById('chart-line'),data,opt.amount,S.sliderAmount,S.transferLog);
+  drawBars(document.getElementById('chart-bar'),S);
+  if(S.transferLog.length>0)drawTimeline(document.getElementById('chart-tl'),S);
+}
+
 function bindEv(){
   function on(id,ev,fn){var el=document.getElementById(id);if(el)el.addEventListener(ev,fn)}
-  on('inp-rate','input',function(e){S.exchangeRateStr=e.target.value;var p=parseFloat(e.target.value.replace(',','.'));if(!isNaN(p)&&p>0){S.exchangeRate=p;persist();render()}});
-  on('inp-balance','input',function(e){var p=parseFloat(e.target.value.replace(',','.'));if(!isNaN(p)&&p>=0){S.turkeyBalanceTL=p;persist();render()}});
-  on('slider-amount','input',function(e){S.sliderAmount=parseInt(e.target.value,10);render()});
-  on('slider-horizon','input',function(e){S.horizonMonths=parseInt(e.target.value,10);S.sliderAmount=null;persist();render()});
-  on('btn-reset','click',function(){S.sliderAmount=null;render()});
-  on('btn-settings','click',function(){S.settingsOpen=!S.settingsOpen;render()});
-  on('btn-log','click',function(){S.logOpen=!S.logOpen;persist();render()});
-  on('inp-tl','change',function(e){S.monthlyTL=parseFloat(e.target.value)||0;persist();render()});
-  on('inp-lesson','change',function(e){S.lessonEUR=parseFloat(e.target.value)||0;persist();render()});
-  on('inp-cycle','change',function(e){S.lessonCycleWeeks=parseFloat(e.target.value)||1;persist();render()});
-  on('inp-interest','change',function(e){S.rate=(parseFloat(e.target.value)||0)/100;persist();render()});
 
+  // EUR/TRY: update state on input, debounce full render
+  on('inp-rate','input',function(e){
+    S.exchangeRateStr=e.target.value;
+    var p=parseFloat(e.target.value.replace(',','.'));
+    if(!isNaN(p)&&p>0){S.exchangeRate=p;persist()}
+  });
+  on('inp-rate','blur',function(){renderSafe()});
+
+  // Turkey balance: same pattern
+  on('inp-balance','input',function(e){
+    var p=parseFloat(e.target.value.replace(',','.'));
+    if(!isNaN(p)&&p>=0){S.turkeyBalanceTL=p;persist()}
+  });
+  on('inp-balance','blur',function(){renderSafe()});
+
+  // Sliders: lightweight update during drag, full render on release
+  on('slider-amount','input',function(e){
+    _isDragging=true;
+    S.sliderAmount=parseInt(e.target.value,10);
+    lightUpdate();
+  });
+  on('slider-amount','change',function(e){
+    _isDragging=false;
+    S.sliderAmount=parseInt(e.target.value,10);
+    renderSafe();
+  });
+
+  on('slider-horizon','input',function(e){
+    _isDragging=true;
+    S.horizonMonths=parseInt(e.target.value,10);
+    S.sliderAmount=null;
+    lightUpdate();
+  });
+  on('slider-horizon','change',function(e){
+    _isDragging=false;
+    S.horizonMonths=parseInt(e.target.value,10);
+    S.sliderAmount=null;
+    persist();
+    renderSafe();
+  });
+
+  on('btn-reset','click',function(){S.sliderAmount=null;renderSafe()});
+  on('btn-settings','click',function(){S.settingsOpen=!S.settingsOpen;renderSafe()});
+  on('btn-log','click',function(){S.logOpen=!S.logOpen;persist();renderSafe()});
+
+  // Settings inputs: only on blur/change
+  on('inp-tl','change',function(e){S.monthlyTL=parseFloat(e.target.value)||0;persist();renderSafe()});
+  on('inp-lesson','change',function(e){S.lessonEUR=parseFloat(e.target.value)||0;persist();renderSafe()});
+  on('inp-cycle','change',function(e){S.lessonCycleWeeks=parseFloat(e.target.value)||1;persist();renderSafe()});
+  on('inp-interest','change',function(e){S.rate=(parseFloat(e.target.value)||0)/100;persist();renderSafe()});
+
+  // Add transfer form: live TL preview
   var aA=document.getElementById('add-amount'),aR=document.getElementById('add-rate'),aP=document.getElementById('add-tl-preview');
   function upd(){if(!aA||!aR||!aP)return;var a=parseFloat(aA.value)||0,r=parseFloat((aR.value||'').replace(',','.'))||0;aP.textContent=(a>0&&r>0)?fmt(a*r,0)+' TL':'—'}
   if(aA)aA.addEventListener('input',upd);if(aR)aR.addEventListener('input',upd);
@@ -223,12 +325,12 @@ function bindEv(){
     if(!dE||!amE||!rE)return;var dt=dE.value,am=parseFloat(amE.value),rt=parseFloat((rE.value||'').replace(',','.'));
     if(!dt||isNaN(am)||am<=0||isNaN(rt)||rt<=0)return;
     S.transferLog.push({id:Date.now(),date:dt,amountEUR:am,rate:rt,fee:getWuFee(am)});
-    S.turkeyBalanceTL+=am*rt;persist();render()});
+    S.turkeyBalanceTL+=am*rt;persist();renderSafe()});
 
   var dels=document.querySelectorAll('.log-del');
   for(var i=0;i<dels.length;i++){dels[i].addEventListener('click',function(){
     var idx=parseInt(this.getAttribute('data-idx'),10);
-    if(!isNaN(idx)&&idx>=0&&idx<S.transferLog.length){var en=S.transferLog[idx];S.turkeyBalanceTL=Math.max(0,S.turkeyBalanceTL-en.amountEUR*en.rate);S.transferLog.splice(idx,1);persist();render()}})}}
+    if(!isNaN(idx)&&idx>=0&&idx<S.transferLog.length){var en=S.transferLog[idx];S.turkeyBalanceTL=Math.max(0,S.turkeyBalanceTL-en.amountEUR*en.rate);S.transferLog.splice(idx,1);persist();renderSafe()}})}}
 
 document.addEventListener('DOMContentLoaded',function(){render();var t;window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(render,250)})});
 </script>
