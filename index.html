@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TransferOpt">
+<meta name="theme-color" content="#059669">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Transfer Optimizer</title>
+<style>
+  :root{--accent:#059669;--accent-light:#d1fae5;--blue:#2563eb;--blue-light:#dbeafe;--bg:#fafafa;--text:#1a1a1a;--muted:#666;--border:#d4d4d4;--light:#f0f0f0;--red:#dc2626;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;padding:12px;padding-top:calc(12px + var(--safe-top));padding-bottom:calc(24px + var(--safe-bottom));-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:480px;margin:0 auto}
+  input[type="range"]{-webkit-appearance:none;width:100%;height:8px;background:#ddd;outline:none;border-radius:4px;margin:8px 0}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;background:var(--accent);border-radius:50%;cursor:pointer}
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px;display:block;font-weight:500}
+  .num-input{background:transparent;border:none;border-bottom:2px solid var(--border);font-size:17px;font-weight:600;color:inherit;font-family:inherit;outline:none;width:100%;padding:6px 0;transition:border-color .2s}
+  .num-input:focus{border-color:var(--accent)}
+  .card{background:#fff;border:2px solid var(--accent);border-radius:12px;padding:16px;margin-bottom:20px}
+  .btn{background:#fff;border:1px solid var(--border);border-radius:10px;color:inherit;padding:12px 16px;font-size:13px;cursor:pointer;font-family:inherit;width:100%;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.5px;font-weight:500;-webkit-tap-highlight-color:transparent}
+  .btn:active{background:var(--light)}
+  .settings-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-container{position:relative;margin-bottom:20px}
+  .chart-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;font-weight:500}
+  svg text{font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif}
+  .tooltip-box{position:absolute;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:10;white-space:nowrap;display:none;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--light)}
+  .hero-stat{text-align:center}
+  .hero-stat-value{font-size:26px;font-weight:700;letter-spacing:-.5px}
+  .hero-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .savings-bar{margin-top:14px;padding:10px 12px;background:var(--accent-light);border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;color:#065f46;font-weight:500}
+  .reset-btn{margin-top:8px;background:none;border:1px solid var(--accent);color:var(--accent);padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;border-radius:6px;font-weight:500}
+  .fee-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+  .fee-range{width:100px;text-align:right;color:var(--muted);font-size:12px}
+  .fee-amount{font-weight:600}
+  .info-box{margin-top:16px;padding:12px;background:var(--light);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.6}
+  .footer{font-size:12px;color:#aaa;text-align:center;padding:12px 0 4px}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:6px}
+  .legend-dot{width:10px;height:10px;display:inline-block;border-radius:2px;vertical-align:middle;margin-right:4px}
+  .log-entry{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--light);font-size:13px;flex-wrap:wrap}
+  .log-entry:last-child{border-bottom:none}
+  .log-del{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;margin-left:auto}
+  .add-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0}
+  .add-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;grid-column:1/-1}
+  .add-btn:active{opacity:.8}
+  .next-card{background:var(--blue-light);border:2px solid var(--blue);border-radius:12px;padding:16px;margin-bottom:20px}
+  .next-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--blue);margin-bottom:10px;font-weight:600}
+  .runway-bar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin:8px 0}
+  .runway-fill{height:100%;border-radius:4px;transition:width .3s}
+  @media(max-width:400px){.grid2{grid-template-columns:1fr}.stat-grid{gap:4px}.hero-stat-value{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+var FEE_TABLE=[{min:0,max:100,fee:2.99},{min:100,max:300,fee:4.99},{min:300,max:500,fee:6.99},{min:500,max:600,fee:9.99},{min:600,max:700,fee:10.99},{min:700,max:800,fee:12.40},{min:800,max:900,fee:13.99},{min:900,max:1000,fee:14.99},{min:1000,max:1500,fee:19.99},{min:1500,max:2000,fee:22.40},{min:2000,max:2500,fee:29.99},{min:2500,max:3000,fee:34.99}];
+
+function getWuFee(a){for(var i=0;i<FEE_TABLE.length;i++){if(a>FEE_TABLE[i].min&&a<=FEE_TABLE[i].max)return FEE_TABLE[i].fee}return FEE_TABLE[FEE_TABLE.length-1].fee}
+
+function compute(p){
+  var hd=p.horizonMonths*30.44,dr=p.rate/365,dtl=(p.monthlyTL/p.exchangeRate)/30.44,dl=p.lessonEUR/(p.lessonCycleWeeks*7),dn=dtl+dl,tn=dn*hd;
+  if(p.transferAmount<=0||dn<=0)return{totalFees:0,totalForegone:0,totalCost:0,numTransfers:0,freqWeeks:0,totalNeed:0,dailyNeedEUR:dn};
+  var dpt=p.transferAmount/dn,nt=Math.ceil(tn/p.transferAmount),tf=nt*getWuFee(p.transferAmount),tg=0;
+  for(var i=0;i<nt;i++){var td=i*dpt;if(td>=hd)break;var rem=tn-i*p.transferAmount,act=Math.min(p.transferAmount,rem),sp=Math.min(dpt,hd-td);
+    if(sp>0&&dr>0){var lr=Math.log(1+dr);tg+=(act/sp)*((Math.pow(1+dr,sp)-1)/lr-sp)}}
+  return{totalFees:tf,totalForegone:tg,totalCost:tf+tg,numTransfers:nt,freqWeeks:dpt/7,totalNeed:tn,dailyNeedEUR:dn}}
+
+function doSweep(s){var r=[];for(var a=50;a<=3000;a+=25){var c=compute({monthlyTL:s.monthlyTL,lessonEUR:s.lessonEUR,lessonCycleWeeks:s.lessonCycleWeeks,rate:s.rate,exchangeRate:s.exchangeRate,horizonMonths:s.horizonMonths,transferAmount:a});r.push({amount:a,totalFees:c.totalFees,totalForegone:c.totalForegone,totalCost:c.totalCost,numTransfers:c.numTransfers,freqWeeks:c.freqWeeks,totalNeed:c.totalNeed,dailyNeedEUR:c.dailyNeedEUR})}return r}
+
+function findOptimal(d){var b=d[0];for(var i=1;i<d.length;i++){if(d[i].totalCost<b.totalCost)b=d[i]}return b}
+function fmt(n,d){if(d===undefined)d=2;return n.toLocaleString('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000)}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+function computeNext(st){
+  var db=st.monthlyTL/30.44,rd=db>0?st.turkeyBalanceTL/db:999;
+  var de=(st.monthlyTL/st.exchangeRate)/30.44+st.lessonEUR/(st.lessonCycleWeeks*7);
+  var best=100,bestC=999;
+  for(var a=50;a<=3000;a+=25){var f=getWuFee(a),ah=(a/de)/2,fg=Math.pow(1+st.rate/365,ah)-1,c=f/a+fg;if(c<bestC){bestC=c;best=a}}
+  var sid=Math.max(0,Math.floor(rd-7)),sd=new Date();sd.setDate(sd.getDate()+sid);
+  return{runwayDays:Math.max(0,Math.round(rd)),recAmt:best,recFee:getWuFee(best),sendDate:sd,sendInDays:sid}}
+
+var SK='transfer_opt_v4';
+function loadS(){try{var s=JSON.parse(localStorage.getItem(SK));return s||null}catch(e){return null}}
+function saveS(s){try{localStorage.setItem(SK,JSON.stringify(s))}catch(e){}}
+var saved=loadS();
+var S={
+  monthlyTL:(saved&&saved.monthlyTL!=null)?saved.monthlyTL:2000,
+  lessonEUR:(saved&&saved.lessonEUR!=null)?saved.lessonEUR:250,
+  lessonCycleWeeks:(saved&&saved.lessonCycleWeeks!=null)?saved.lessonCycleWeeks:5,
+  exchangeRate:(saved&&saved.exchangeRate!=null)?saved.exchangeRate:38.5,
+  exchangeRateStr:(saved&&saved.exchangeRate!=null)?String(saved.exchangeRate):'38.5',
+  rate:(saved&&saved.rate!=null)?saved.rate:0.0225,
+  horizonMonths:(saved&&saved.horizonMonths!=null)?saved.horizonMonths:12,
+  sliderAmount:null,settingsOpen:false,
+  logOpen:(saved&&saved.logOpen!=null)?saved.logOpen:true,
+  transferLog:(saved&&saved.transferLog)?saved.transferLog:[],
+  turkeyBalanceTL:(saved&&saved.turkeyBalanceTL!=null)?saved.turkeyBalanceTL:0
+};
+function persist(){saveS({monthlyTL:S.monthlyTL,lessonEUR:S.lessonEUR,lessonCycleWeeks:S.lessonCycleWeeks,exchangeRate:S.exchangeRate,rate:S.rate,horizonMonths:S.horizonMonths,logOpen:S.logOpen,transferLog:S.transferLog,turkeyBalanceTL:S.turkeyBalanceTL})}
+
+// ══ CHARTS ══
+function drawCostCurve(ct,data,optA,slA,log){
+  if(!ct)return;var W=ct.clientWidth||350,H=200,p={t:12,r:10,b:28,l:48},cw=W-p.l-p.r,ch=H-p.t-p.b;
+  var xn=50,xx=3000,cs=data.map(function(d){return d.totalCost}),yn=Math.min.apply(null,cs)*.95,yx=Math.max.apply(null,cs)*1.05;
+  function sx(v){return p.l+((v-xn)/(xx-xn))*cw}function sy(v){return p.t+ch-((v-yn)/(yx-yn))*ch}
+  var pp=[];for(var i=0;i<data.length;i++)pp.push((i===0?'M':'L')+sx(data[i].amount).toFixed(1)+','+sy(data[i].totalCost).toFixed(1));
+  var g='';for(var t=0;t<=4;t++){var v=yn+(yx-yn)*(t/4),y=sy(v);g+='<line x1="'+p.l+'" y1="'+y+'" x2="'+(p.l+cw)+'" y2="'+y+'" stroke="#e8e8e8" stroke-dasharray="3,3"/>';g+='<text x="'+(p.l-4)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#999">'+v.toFixed(0)+'</text>'}
+  var xl='';for(var xv=500;xv<=3000;xv+=500)xl+='<text x="'+sx(xv)+'" y="'+(H-4)+'" text-anchor="middle" font-size="10" fill="#999">'+xv+'</text>';
+  var rf='';if(optA!=null)rf+='<line x1="'+sx(optA)+'" y1="'+p.t+'" x2="'+sx(optA)+'" y2="'+(p.t+ch)+'" stroke="#059669" stroke-dasharray="4,4" stroke-width="1.5"/>';
+  if(slA!=null&&slA!==optA)rf+='<line x1="'+sx(slA)+'" y1="'+p.t+'" x2="'+sx(slA)+'" y2="'+(p.t+ch)+'" stroke="#999" stroke-dasharray="2,2"/>';
+  var bd='';if(log&&log.length>0){for(var j=0;j<log.length;j++){var a=log[j].amountEUR;if(a>=xn&&a<=xx){var nr=data[0];for(var k=0;k<data.length;k++){if(Math.abs(data[k].amount-a)<Math.abs(nr.amount-a))nr=data[k]}bd+='<circle cx="'+sx(a).toFixed(1)+'" cy="'+sy(nr.totalCost).toFixed(1)+'" r="6" fill="#2563eb" stroke="#fff" stroke-width="2"/>'}}}
+  ct.innerHTML='<div style="position:relative"><svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+g+xl+'<path d="'+pp.join(' ')+'" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+rf+bd+'<circle id="hd" cx="0" cy="0" r="5" fill="#059669" style="display:none"/><rect width="'+cw+'" height="'+ch+'" x="'+p.l+'" y="'+p.t+'" fill="transparent" id="hl"/></svg><div class="tooltip-box" id="tl"></div></div>';
+  var hit=document.getElementById('hl'),tt=document.getElementById('tl'),dot=document.getElementById('hd');
+  function op(e){var rc=hit.getBoundingClientRect(),cx=(e.touches?e.touches[0].clientX:e.clientX),rx=cx-rc.left,vl=xn+(rx/cw)*(xx-xn),cl=data[0],md=9e9;for(var m=0;m<data.length;m++){var d=Math.abs(data[m].amount-vl);if(d<md){md=d;cl=data[m]}}dot.setAttribute('cx',sx(cl.amount));dot.setAttribute('cy',sy(cl.totalCost));dot.style.display='block';tt.style.display='block';tt.innerHTML='<strong>'+cl.amount+' €</strong><br>Toplam: '+fmt(cl.totalCost)+' €<br>WU: '+fmt(cl.totalFees)+' €';var tx=sx(cl.amount);tt.style.top=(sy(cl.totalCost)-30)+'px';tt.style.left=(tx+150>W)?(tx-130)+'px':(tx+15)+'px'}
+  function ol(){tt.style.display='none';dot.style.display='none'}
+  hit.addEventListener('mousemove',op);hit.addEventListener('touchmove',op,{passive:true});hit.addEventListener('mouseleave',ol);hit.addEventListener('touchend',ol)}
+
+function drawTimeline(ct,st){
+  if(!ct||st.transferLog.length===0){if(ct)ct.innerHTML='<div style="text-align:center;color:#bbb;font-size:12px;padding:30px 0">Transfer kaydı ekleyin</div>';return}
+  var W=ct.clientWidth||350,H=200,p={t:12,r:10,b:28,l:48},cw=W-p.l-p.r,ch=H-p.t-p.b;
+  var log=st.transferLog.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date)});
+  var sd=log[0].date,hd=st.horizonMonths*30.44,opt=findOptimal(doSweep(st));
+  var odp=opt.amount/opt.dailyNeedEUR,of=getWuFee(opt.amount),op=[],oc=0;
+  for(var d=0;d<hd;d+=odp){oc+=of;op.push({day:d,cost:oc})}
+  var ap=[],ac=0;for(var i=0;i<log.length;i++){var dd=daysBetween(sd,log[i].date);ac+=log[i].fee;ap.push({day:Math.max(0,dd),cost:ac})}
+  var ad=op.map(function(x){return x.day}).concat(ap.map(function(x){return x.day}));
+  var acst=op.map(function(x){return x.cost}).concat(ap.map(function(x){return x.cost}));
+  var xM=Math.max.apply(null,ad)*1.1||30,yM=Math.max.apply(null,acst)*1.15||10;
+  function sx(v){return p.l+(v/xM)*cw}function sy(v){return p.t+ch-(v/yM)*ch}
+  var g='';for(var t=0;t<=4;t++){var v=(yM/4)*t,y=sy(v);g+='<line x1="'+p.l+'" y1="'+y+'" x2="'+(p.l+cw)+'" y2="'+y+'" stroke="#e8e8e8" stroke-dasharray="3,3"/>';g+='<text x="'+(p.l-4)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#999">'+v.toFixed(0)+'€</text>'}
+  var xl='';for(var w=0;w*7<=xM;w+=4)xl+='<text x="'+sx(w*7)+'" y="'+(H-4)+'" text-anchor="middle" font-size="10" fill="#999">'+w+'h</text>';
+  var gp='';for(var gi=0;gi<op.length;gi++)gp+=(gi===0?'M':'L')+sx(op[gi].day).toFixed(1)+','+sy(op[gi].cost).toFixed(1);
+  var bp='',bds='';for(var bi=0;bi<ap.length;bi++){bp+=(bi===0?'M':'L')+sx(ap[bi].day).toFixed(1)+','+sy(ap[bi].cost).toFixed(1);bds+='<circle cx="'+sx(ap[bi].day).toFixed(1)+'" cy="'+sy(ap[bi].cost).toFixed(1)+'" r="5" fill="#2563eb" stroke="#fff" stroke-width="2"/>'}
+  ct.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+g+xl+(gp?'<path d="'+gp+'" fill="none" stroke="#059669" stroke-width="2" stroke-dasharray="6,3" stroke-linecap="round"/>':'')+(bp?'<path d="'+bp+'" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>':'')+bds+'</svg><div class="legend"><span><span class="legend-dot" style="background:#059669"></span>Planlanan</span><span><span class="legend-dot" style="background:#2563eb"></span>Gerçekleşen</span></div>'}
+
+function drawBars(ct,st){
+  if(!ct)return;var W=ct.clientWidth||350,H=180,p={t:12,r:10,b:28,l:48},cw=W-p.l-p.r,ch=H-p.t-p.b;
+  var am=[100,300,500,750,1000,1500,2000,3000],bs=[];
+  for(var i=0;i<am.length;i++){var r=compute({monthlyTL:st.monthlyTL,lessonEUR:st.lessonEUR,lessonCycleWeeks:st.lessonCycleWeeks,rate:st.rate,exchangeRate:st.exchangeRate,horizonMonths:st.horizonMonths,transferAmount:am[i]});bs.push({a:am[i],f:r.totalFees,in:r.totalForegone,t:r.totalCost})}
+  var mY=0;for(var j=0;j<bs.length;j++){if(bs[j].t>mY)mY=bs[j].t}mY*=1.1;var gp=cw/bs.length,bw=gp*.65;
+  var bh='',lb='';for(var k=0;k<bs.length;k++){var x=p.l+k*gp+(gp-bw)/2,hF=(bs[k].f/mY)*ch,hI=(bs[k].in/mY)*ch,yF=p.t+ch-hF-hI,yI=p.t+ch-hI;bh+='<rect x="'+x+'" y="'+yF.toFixed(1)+'" width="'+bw+'" height="'+hF.toFixed(1)+'" fill="#059669" rx="2"/>';bh+='<rect x="'+x+'" y="'+yI.toFixed(1)+'" width="'+bw+'" height="'+hI.toFixed(1)+'" fill="#f59e0b" rx="2"/>';lb+='<text x="'+(x+bw/2)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="#999">'+bs[k].a+'</text>'}
+  var yg='';for(var t=0;t<=3;t++){var v=(mY/3)*t,y=p.t+ch-(v/mY)*ch;yg+='<line x1="'+p.l+'" y1="'+y+'" x2="'+(p.l+cw)+'" y2="'+y+'" stroke="#e8e8e8" stroke-dasharray="3,3"/>';yg+='<text x="'+(p.l-4)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#999">'+v.toFixed(0)+'</text>'}
+  ct.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+yg+bh+lb+'</svg><div class="legend"><span><span class="legend-dot" style="background:#059669"></span>WU Ücreti</span><span><span class="legend-dot" style="background:#f59e0b"></span>Kaçan Faiz</span></div>'}
+
+// ══ RENDER ══
+function render(){
+  var data=doSweep(S),opt=findOptimal(data);
+  var naive=compute({monthlyTL:S.monthlyTL,lessonEUR:S.lessonEUR,lessonCycleWeeks:S.lessonCycleWeeks,rate:S.rate,exchangeRate:S.exchangeRate,horizonMonths:S.horizonMonths,transferAmount:100});
+  var sAmt=S.sliderAmount!==null?S.sliderAmount:opt.amount;
+  var sel=S.sliderAmount!==null?compute({monthlyTL:S.monthlyTL,lessonEUR:S.lessonEUR,lessonCycleWeeks:S.lessonCycleWeeks,rate:S.rate,exchangeRate:S.exchangeRate,horizonMonths:S.horizonMonths,transferAmount:S.sliderAmount}):opt;
+  var showR=S.sliderAmount!==null&&S.sliderAmount!==opt.amount;
+  var fT=sel.freqWeeks<1?'&lt;1':fmt(sel.freqWeeks,1),sv=naive.totalCost-sel.totalCost;
+  var nx=computeNext(S),rPct=Math.min(100,Math.max(0,(nx.runwayDays/60)*100));
+  var rCol=nx.runwayDays<7?'#dc2626':nx.runwayDays<21?'#f59e0b':'#059669';
+  var sdStr=nx.sendDate.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+
+  var logH='',tFees=0,tEUR=0;
+  for(var i=S.transferLog.length-1;i>=0;i--){var e=S.transferLog[i];tFees+=e.fee;tEUR+=e.amountEUR;var tl=e.amountEUR*e.rate;
+    logH+='<div class="log-entry"><span style="color:var(--muted);font-size:12px;min-width:70px">'+new Date(e.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+'</span><span style="font-weight:700">'+fmt(e.amountEUR,0)+' €</span><span style="color:var(--muted);font-size:12px">→ '+fmt(tl,0)+' TL</span><span style="color:var(--muted);font-size:12px">'+fmt(e.fee)+' € fee</span><button class="log-del" data-idx="'+i+'">×</button></div>'}
+
+  var fR='';for(var f=0;f<FEE_TABLE.length;f++){var r=FEE_TABLE[f];fR+='<div class="fee-row"><span class="fee-range">'+r.min+'–'+r.max+' €</span><span style="color:#ccc">→</span><span class="fee-amount">'+r.fee.toFixed(2)+' €</span></div>'}
+
+  var setH='';if(S.settingsOpen){setH='<div class="settings-body"><div class="grid2"><div><label class="label">Aylık TL Harcama</label><div style="display:flex;align-items:baseline;gap:4px"><input type="number" id="inp-tl" value="'+S.monthlyTL+'" class="num-input"><span style="font-size:13px;color:var(--muted)">TL</span></div></div><div><label class="label">Ders Ücreti (döngü)</label><div style="display:flex;align-items:baseline;gap:4px"><input type="number" id="inp-lesson" value="'+S.lessonEUR+'" class="num-input"><span style="font-size:13px;color:var(--muted)">€</span></div></div><div><label class="label">Ders Döngüsü</label><div style="display:flex;align-items:baseline;gap:4px"><input type="number" id="inp-cycle" value="'+S.lessonCycleWeeks+'" class="num-input"><span style="font-size:13px;color:var(--muted)">hafta</span></div></div><div><label class="label">Faiz Oranı (yıllık)</label><div style="display:flex;align-items:baseline;gap:4px"><input type="number" id="inp-interest" value="'+(S.rate*100).toFixed(2)+'" step="0.05" class="num-input"><span style="font-size:13px;color:var(--muted)">%</span></div></div></div><div style="margin-top:20px"><div class="label" style="margin-bottom:8px">Western Union Ücret Tablosu</div>'+fR+'</div><div class="info-box">ℹ Kaçan faiz = Almanya hesabındaki paradan erken ayrılması nedeniyle kaybedilen günlük bileşik faiz.</div></div>'}
+
+  document.getElementById('app').innerHTML=
+    '<div style="margin-bottom:20px"><div style="display:flex;align-items:baseline;gap:8px"><span class="label" style="margin:0">EUR / TRY</span><input type="text" inputmode="decimal" id="inp-rate" value="'+S.exchangeRateStr+'" placeholder="38.50" style="background:transparent;border:none;border-bottom:3px solid var(--accent);font-size:34px;font-weight:700;width:150px;color:inherit;font-family:inherit;outline:none;padding:4px 0"></div></div>'+
+
+    '<div class="next-card"><div class="next-label">Sonraki Transfer</div><div style="display:flex;flex-wrap:wrap;justify-content:space-around;gap:8px;margin-bottom:12px"><div class="hero-stat"><div class="hero-stat-value" style="color:var(--blue)">'+fmt(nx.recAmt,0)+' €</div><div class="hero-stat-label">önerilen miktar</div></div><div class="hero-stat"><div class="hero-stat-value" style="color:var(--blue)">'+sdStr+'</div><div class="hero-stat-label">tavsiye tarih</div></div><div class="hero-stat"><div class="hero-stat-value" style="color:var(--blue)">'+fmt(nx.recFee)+' €</div><div class="hero-stat-label">WU ücreti</div></div></div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Türkiye bakiyesi ile pist: <strong>'+nx.runwayDays+' gün</strong></div><div class="runway-bar"><div class="runway-fill" style="width:'+rPct+'%;background:'+rCol+'"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)"><span>0</span><span>60 gün</span></div></div>'+
+
+    '<div style="margin-bottom:20px"><label class="label">Türkiye Hesabı Bakiye (TL)</label><div style="display:flex;align-items:baseline;gap:6px"><input type="text" inputmode="decimal" id="inp-balance" value="'+S.turkeyBalanceTL+'" style="background:transparent;border:none;border-bottom:3px solid var(--blue);font-size:28px;font-weight:700;width:160px;color:inherit;font-family:inherit;outline:none;padding:4px 0"><span style="font-size:16px;color:var(--muted)">TL</span></div></div>'+
+
+    '<div style="margin-bottom:20px"><button class="btn" id="btn-log" style="border-color:var(--blue);'+(S.logOpen?'border-radius:10px 10px 0 0':'')+'"><span style="color:var(--blue)">📋 Transfer Günlüğü ('+S.transferLog.length+')</span><span>'+(S.logOpen?'▲':'▼')+'</span></button>'+
+    (S.logOpen?('<div class="settings-body" style="border-color:var(--blue)"><div class="add-form"><div><label class="label">Tarih</label><input type="date" id="add-date" value="'+todayStr()+'" class="num-input" style="font-size:14px"></div><div><label class="label">Miktar (EUR)</label><input type="number" id="add-amount" placeholder="500" class="num-input"></div><div><label class="label">Kur (EUR/TRY)</label><input type="text" inputmode="decimal" id="add-rate" value="'+S.exchangeRateStr+'" class="num-input"></div><div><label class="label">Alınan TL</label><div id="add-tl-preview" style="font-size:15px;font-weight:600;padding-top:6px;color:var(--muted)">—</div></div><button class="add-btn" id="btn-add">+ Transfer Ekle</button></div>'+(S.transferLog.length>0?'<div style="border-top:1px solid var(--light);margin-top:4px"><div style="display:flex;justify-content:space-between;padding:10px 0 4px;font-size:11px;color:var(--muted)"><span>Toplam: '+fmt(tEUR,0)+' € gönderildi</span><span>WU: '+fmt(tFees)+' €</span></div>'+logH+'</div>':'<div style="text-align:center;color:#bbb;font-size:12px;padding:16px 0">Henüz transfer kaydı yok</div>')+'</div>'):'')+
+    '</div>'+
+
+    (S.transferLog.length>0?'<div class="chart-container"><div class="chart-title">Kümülatif Maliyet: Planlanan vs Gerçekleşen</div><div id="chart-tl"></div></div>':'')+
+
+    '<div class="card"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;font-weight:600">Optimum Strateji ('+S.horizonMonths+' ay)</div><div style="display:flex;flex-wrap:wrap;justify-content:space-around;gap:8px"><div class="hero-stat"><div class="hero-stat-value">'+fmt(sAmt,0)+' €</div><div class="hero-stat-label">transfer başına</div></div><div class="hero-stat"><div class="hero-stat-value">'+fT+'</div><div class="hero-stat-label">hafta aralık</div></div><div class="hero-stat"><div class="hero-stat-value">'+sel.numTransfers+'</div><div class="hero-stat-label">transfer sayısı</div></div></div><div class="stat-grid"><div><div style="font-size:10px;color:var(--muted)">Toplam</div><div style="font-weight:700;font-size:15px">'+fmt(sel.totalCost)+' €</div></div><div><div style="font-size:10px;color:var(--muted)">WU Ücret</div><div style="font-weight:700;font-size:15px">'+fmt(sel.totalFees)+' €</div></div><div><div style="font-size:10px;color:var(--muted)">Kaçan Faiz</div><div style="font-weight:700;font-size:15px">'+fmt(sel.totalForegone)+' €</div></div></div>'+(sv>0?'<div class="savings-bar">↗ Naif yönteme göre <strong>'+fmt(sv)+' €</strong> tasarruf</div>':'')+'</div>'+
+
+    '<div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span class="label" style="margin:0">Transfer Tutarı</span><span style="font-size:20px;font-weight:700">'+sAmt+' €</span></div><input type="range" id="slider-amount" min="50" max="3000" step="25" value="'+sAmt+'"><div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb"><span>50 €</span><span>3.000 €</span></div>'+(showR?'<button class="reset-btn" id="btn-reset">↩ Optimuma dön ('+opt.amount+' €)</button>':'')+'</div>'+
+
+    '<div class="chart-container"><div class="chart-title">Toplam Maliyet Eğrisi</div><div id="chart-line"></div></div>'+
+    '<div class="chart-container"><div class="chart-title">Maliyet Dağılımı</div><div id="chart-bar"></div></div>'+
+
+    '<div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span class="label" style="margin:0">Analiz Süresi</span><span style="font-size:16px;font-weight:600">'+S.horizonMonths+' ay</span></div><input type="range" id="slider-horizon" min="3" max="36" step="1" value="'+S.horizonMonths+'"></div>'+
+
+    '<div style="margin-bottom:20px"><button class="btn" id="btn-settings" style="'+(S.settingsOpen?'border-radius:10px 10px 0 0':'')+'"><span>⚙ Parametreler</span><span>'+(S.settingsOpen?'▲':'▼')+'</span></button>'+setH+'</div>'+
+
+    '<div class="footer">'+S.horizonMonths+' ayda toplam ihtiyaç: ~'+fmt(opt.totalNeed,0)+' € · Aylık ~'+fmt(opt.totalNeed/S.horizonMonths,0)+' €</div>';
+
+  drawCostCurve(document.getElementById('chart-line'),data,opt.amount,S.sliderAmount,S.transferLog);
+  drawBars(document.getElementById('chart-bar'),S);
+  if(S.transferLog.length>0)drawTimeline(document.getElementById('chart-tl'),S);
+  bindEv()}
+
+// ══ EVENTS ══
+function bindEv(){
+  function on(id,ev,fn){var el=document.getElementById(id);if(el)el.addEventListener(ev,fn)}
+  on('inp-rate','input',function(e){S.exchangeRateStr=e.target.value;var p=parseFloat(e.target.value.replace(',','.'));if(!isNaN(p)&&p>0){S.exchangeRate=p;persist();render()}});
+  on('inp-balance','input',function(e){var p=parseFloat(e.target.value.replace(',','.'));if(!isNaN(p)&&p>=0){S.turkeyBalanceTL=p;persist();render()}});
+  on('slider-amount','input',function(e){S.sliderAmount=parseInt(e.target.value,10);render()});
+  on('slider-horizon','input',function(e){S.horizonMonths=parseInt(e.target.value,10);S.sliderAmount=null;persist();render()});
+  on('btn-reset','click',function(){S.sliderAmount=null;render()});
+  on('btn-settings','click',function(){S.settingsOpen=!S.settingsOpen;render()});
+  on('btn-log','click',function(){S.logOpen=!S.logOpen;persist();render()});
+  on('inp-tl','change',function(e){S.monthlyTL=parseFloat(e.target.value)||0;persist();render()});
+  on('inp-lesson','change',function(e){S.lessonEUR=parseFloat(e.target.value)||0;persist();render()});
+  on('inp-cycle','change',function(e){S.lessonCycleWeeks=parseFloat(e.target.value)||1;persist();render()});
+  on('inp-interest','change',function(e){S.rate=(parseFloat(e.target.value)||0)/100;persist();render()});
+
+  var aA=document.getElementById('add-amount'),aR=document.getElementById('add-rate'),aP=document.getElementById('add-tl-preview');
+  function upd(){if(!aA||!aR||!aP)return;var a=parseFloat(aA.value)||0,r=parseFloat((aR.value||'').replace(',','.'))||0;aP.textContent=(a>0&&r>0)?fmt(a*r,0)+' TL':'—'}
+  if(aA)aA.addEventListener('input',upd);if(aR)aR.addEventListener('input',upd);
+
+  on('btn-add','click',function(){
+    var dE=document.getElementById('add-date'),amE=document.getElementById('add-amount'),rE=document.getElementById('add-rate');
+    if(!dE||!amE||!rE)return;var dt=dE.value,am=parseFloat(amE.value),rt=parseFloat((rE.value||'').replace(',','.'));
+    if(!dt||isNaN(am)||am<=0||isNaN(rt)||rt<=0)return;
+    S.transferLog.push({id:Date.now(),date:dt,amountEUR:am,rate:rt,fee:getWuFee(am)});
+    S.turkeyBalanceTL+=am*rt;persist();render()});
+
+  var dels=document.querySelectorAll('.log-del');
+  for(var i=0;i<dels.length;i++){dels[i].addEventListener('click',function(){
+    var idx=parseInt(this.getAttribute('data-idx'),10);
+    if(!isNaN(idx)&&idx>=0&&idx<S.transferLog.length){var en=S.transferLog[idx];S.turkeyBalanceTL=Math.max(0,S.turkeyBalanceTL-en.amountEUR*en.rate);S.transferLog.splice(idx,1);persist();render()}})}}
+
+document.addEventListener('DOMContentLoaded',function(){render();var t;window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(render,250)})});
+</script>
+</body>
+</html>
